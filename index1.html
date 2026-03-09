@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Screen Weather Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Modern Reset */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        /* Full Screen Dark Slate Theme */
+        body {
+            background-color: #0f172a; 
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        /* Top Search Bar */
+        .header { display: flex; justify-content: center; margin-bottom: 2rem; }
+
+        .search-bar {
+            display: flex;
+            width: 100%;
+            max-width: 800px;
+            background: #1e293b;
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+        }
+
+        .search-bar input {
+            flex: 1; background: transparent; border: none; color: white;
+            font-size: 1.2rem; outline: none; padding: 0.5rem 1rem;
+        }
+
+        .search-bar button {
+            background: #3b82f6; border: none; border-radius: 50%;
+            width: 50px; height: 50px; color: white; font-size: 1.2rem;
+            cursor: pointer; transition: 0.2s ease;
+        }
+
+        .search-bar button:hover { background: #2563eb; transform: scale(1.05); }
+
+        /* Status & Error Messages */
+        .message-box {
+            text-align: center; font-size: 1.2rem; display: none; margin-bottom: 2rem;
+            padding: 1rem; border-radius: 12px; max-width: 800px; margin-left: auto; margin-right: auto;
+        }
+        .error { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+        .loading { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #60a5fa; }
+
+        /* Full Screen Dashboard Grid */
+        .dashboard {
+            display: none; /* Hidden until search is completed */
+            grid-template-columns: 2fr 1fr; gap: 2rem; flex: 1;
+        }
+
+        @media (max-width: 900px) { .dashboard { grid-template-columns: 1fr; } }
+
+        /* Sleek Panels */
+        .panel {
+            background: #1e293b; border-radius: 24px; padding: 2.5rem;
+            border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column;
+        }
+
+        /* Left Panel - Current Weather */
+        .current-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+        .current-info h2 { font-size: 2.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .current-info p { color: #94a3b8; font-size: 1.2rem; text-transform: capitalize; }
+        .current-temp {
+            font-size: 6rem; font-weight: 700;
+            background: linear-gradient(to right, #60a5fa, #3b82f6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* Current Weather Extra Details Grid */
+        .current-details {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1.5rem; margin-top: auto;
+        }
+
+        .detail-box {
+            background: rgba(15, 23, 42, 0.6); padding: 1.5rem; border-radius: 16px;
+            display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.5rem;
+        }
+        .detail-box i { font-size: 1.8rem; color: #60a5fa; }
+        .detail-box span { font-size: 0.9rem; color: #94a3b8; }
+        .detail-box strong { font-size: 1.4rem; }
+
+        /* Right Panel - Past Weather */
+        .past-panel h3 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #e2e8f0; display: flex; align-items: center; gap: 0.5rem; }
+        .past-day { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 0; border-bottom: 1px solid #334155; font-size: 1.1rem; }
+        .past-day:last-child { border-bottom: none; }
+        .day-date { width: 80px; color: #cbd5e1; }
+        .day-icon { font-size: 1.5rem; }
+        .temp-highlow { display: flex; gap: 1rem; font-weight: 500; }
+        .temp-highlow .high { color: #f87171; } 
+        .temp-highlow .low { color: #60a5fa; } 
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="search-bar">
+            <input type="text" id="city-input" placeholder="Search for a city..." spellcheck="false">
+            <button id="search-btn"><i class="fas fa-search"></i></button>
+        </div>
+    </div>
+
+    <div class="message-box loading" id="loading-msg">Fetching weather data...</div>
+    <div class="message-box error" id="error-msg">City not found. Please try again!</div>
+
+    <div class="dashboard" id="dashboard">
+        
+        <div class="panel">
+            <div class="current-main">
+                <div class="current-info">
+                    <h2 id="city-name">--</h2>
+                    <p id="weather-desc">--</p>
+                </div>
+                <div class="current-temp" id="current-temp">--°</div>
+            </div>
+
+            <div class="current-details">
+                <div class="detail-box">
+                    <i class="fas fa-temperature-half"></i>
+                    <span>Feels Like</span>
+                    <strong id="feels-like">--°</strong>
+                </div>
+                <div class="detail-box">
+                    <i class="fas fa-water"></i>
+                    <span>Humidity</span>
+                    <strong id="humidity">--%</strong>
+                </div>
+                <div class="detail-box">
+                    <i class="fas fa-wind"></i>
+                    <span>Wind Speed</span>
+                    <strong id="wind">-- km/h</strong>
+                </div>
+                <div class="detail-box">
+                    <i class="fas fa-eye"></i>
+                    <span>Visibility</span>
+                    <strong id="visibility">-- km</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel past-panel">
+            <h3><i class="fas fa-clock-rotate-left"></i> Past 5 Days</h3>
+            <div id="past-days-list">
+                </div>
+        </div>
+
+    </div>
+
+    <script>
+        const owmApiKey = "d446484c48f23ecd53aab2086d3988a2"; 
+        
+        const searchInput = document.getElementById("city-input");
+        const searchBtn = document.getElementById("search-btn");
+        const errorMsg = document.getElementById("error-msg");
+        const loadingMsg = document.getElementById("loading-msg");
+        const dashboard = document.getElementById("dashboard");
+
+        function getWeatherEmoji(code) {
+            if (code === 0) return "☀️";
+            if (code > 0 && code <= 2) return "⛅";
+            if (code === 3) return "☁️";
+            if (code >= 45 && code <= 48) return "🌫️";
+            if (code >= 51 && code <= 67) return "🌧️";
+            if (code >= 71 && code <= 77) return "❄️";
+            if (code >= 80 && code <= 82) return "🌧️";
+            if (code >= 95) return "⛈️";
+            return "🌤️";
+        }
+
+        function formatDate(dateString) {
+            const options = { weekday: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+
+        // Helper function to show errors clearly
+        function showError(message) {
+            loadingMsg.style.display = "none";
+            dashboard.style.display = "none";
+            errorMsg.innerText = message;
+            errorMsg.style.display = "block";
+        }
+
+        async function fetchWeather(city) {
+            try {
+                // Reset UI for new search
+                errorMsg.style.display = "none";
+                dashboard.style.display = "none";
+                loadingMsg.style.display = "block";
+
+                // 1. Fetch Current Weather
+                const owmUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${owmApiKey}`;
+                const owmRes = await fetch(owmUrl);
+                
+                // Smart Error Catching
+                if (owmRes.status === 401) {
+                    throw new Error("API Key Error: If you just created this key, please wait 1 to 2 hours for it to activate.");
+                }
+                if (!owmRes.ok) {
+                    throw new Error(`We couldn't find a city named "${city}". Check your spelling!`);
+                }
+
+                const owmData = await owmRes.json();
+
+                // Update Current Weather UI
+                document.getElementById("city-name").innerText = `${owmData.name}, ${owmData.sys.country}`;
+                document.getElementById("weather-desc").innerText = owmData.weather[0].description;
+                document.getElementById("current-temp").innerText = Math.round(owmData.main.temp) + "°";
+                
+                document.getElementById("feels-like").innerText = Math.round(owmData.main.feels_like) + "°";
+                document.getElementById("humidity").innerText = owmData.main.humidity + "%";
+                document.getElementById("wind").innerText = owmData.wind.speed + " km/h";
+                document.getElementById("visibility").innerText = (owmData.visibility / 1000).toFixed(1) + " km";
+
+                // 2. Fetch Past Weather
+                const lat = owmData.coord.lat;
+                const lon = owmData.coord.lon;
+                
+                const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weather_code,temperature_2m_max,temperature_2m_min&past_days=5&forecast_days=1&timezone=auto`;
+                const meteoRes = await fetch(meteoUrl);
+                
+                if (!meteoRes.ok) throw new Error("Could not load past weather data.");
+                const meteoData = await meteoRes.json();
+
+                // Update Past Days UI
+                const pastDaysContainer = document.getElementById("past-days-list");
+                pastDaysContainer.innerHTML = ""; 
+
+                for(let i = 0; i < 5; i++) {
+                    const date = meteoData.daily.time[i];
+                    const maxTemp = Math.round(meteoData.daily.temperature_2m_max[i]);
+                    const minTemp = Math.round(meteoData.daily.temperature_2m_min[i]);
+                    const code = meteoData.daily.weather_code[i];
+
+                    pastDaysContainer.innerHTML += `
+                        <div class="past-day">
+                            <div class="day-date">${formatDate(date)}</div>
+                            <div class="day-icon">${getWeatherEmoji(code)}</div>
+                            <div class="temp-highlow">
+                                <span class="high">${maxTemp}°</span> 
+                                <span class="low">${minTemp}°</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Show dashboard, hide loading
+                loadingMsg.style.display = "none";
+                dashboard.style.display = "grid";
+
+            } catch (error) {
+                console.error("Weather App Error:", error);
+                showError(error.message);
+            }
+        }
+
+        searchBtn.addEventListener("click", () => {
+            if(searchInput.value.trim() !== "") fetchWeather(searchInput.value);
+        });
+
+        searchInput.addEventListener("keypress", (event) => {
+            if (event.key === "Enter" && searchInput.value.trim() !== "") {
+                fetchWeather(searchInput.value);
+            }
+        });
+    </script>
+</body>
+</html>
