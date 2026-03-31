@@ -6,7 +6,6 @@ A sleek, modern, and fully responsive weather dashboard built with vanilla HTML,
 
 * **Real-Time Data:** Displays current temperature, "feels like" temperature, humidity, wind speed, and visibility.
 * **Historical Data:** Shows the high/low temperatures and weather conditions for the past 5 days.
-* **Modern UI:** A dark-themed, full-screen dashboard layout with responsive CSS grid architecture.
 * **Smart Error Handling:** Provides clear UI feedback for typos, invalid city searches, or pending API key activations.
 * **No Build Tools Required:** Pure vanilla web technologies—just open and run.
 
