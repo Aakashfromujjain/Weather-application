@@ -1,6 +1,6 @@
 # 🌤️ Dynamic Full-Screen Weather Dashboard
 
-A sleek, modern, and fully responsive weather dashboard built with vanilla HTML, CSS, and JavaScript. This application fetches real-time weather conditions for any city globally and displays a historical 5-day weather forecast.
+A  modern, and fully responsive weather dashboard built with vanilla HTML, CSS, and JavaScript. This application fetches real-time weather conditions for any city globally and displays a historical 5-day weather forecast.
 
 ## ✨ Features
 
